@@ -31,6 +31,7 @@
 
 <script>
 import InputGroup from '../components/inputGroup'
+import { Toast } from 'mint-ui'
 export default {
   name: 'Login',
   components: {
@@ -42,12 +43,13 @@ export default {
       verifyCode: '',
       errors: {},
       btnTitle: '获取验证码',
-      disabled: false
+      disabled: false,
+      yzm: '' // 测试验证码提示
     }
   },
   computed: {
     isClick() {
-      if(!this.phone || !this.verifyCode) return true
+      if (!this.phone || !this.verifyCode) return true
       else false
     }
   },
@@ -57,23 +59,24 @@ export default {
       // 取消错误提醒
       this.errors = {}
       // 发送请求
-      this.$axios.post('/api/posts/sms_back', {
-        phone: this.phone,
-        code: this.verifyCode
-      })
-      .then(res => {
-        console.log(res);
-        // 检验成功 设置登陆状态并且跳转到home页面
-        localStorage.setItem('ele_login', true)
-        this.$router.push('/')         
-      })
-      .catch(err => {
-        //返回错误信息
-        this.errors = {
-          code: err.response.data.msg
-          //code: err.response
-        }
-      })
+      this.$axios
+        .post('/api/posts/sms_back', {
+          phone: this.phone,
+          code: this.verifyCode
+        })
+        .then(res => {
+          // console.log(res);
+          // 检验成功 设置登陆状态并且跳转到home页面
+          localStorage.setItem('ele_login', res.data.user._id)
+          this.$router.push('/')
+        })
+        .catch(err => {
+          //返回错误信息
+          this.errors = {
+            code: err.response.data.msg
+            //code: err.response
+          }
+        })
     },
     getVerifyCode() {
       if (this.validatePhone()) {
@@ -86,9 +89,24 @@ export default {
             phone: this.phone
           })
           .then(res => {
-            console.log(res)
+            // console.log(res)
+            let str = res.data.msg
+            let num = str.replace(/[^0-9]/gi, '')
+            // console.log(num);
+            this.verifyCode = num
+            // this.handleLogin()
+            this.yzm = res.data.msg
+            this.showMsg(this.yzm)
           })
       }
+    },
+    // 测试 验证码提示
+    showMsg(msg) {
+      Toast({
+        message: msg,
+        position: 'bottom',
+        duration: 5000
+      })
     },
     // 获取验证码
     validateBtn() {
